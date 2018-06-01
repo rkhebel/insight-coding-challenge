@@ -6,12 +6,15 @@
 
 import os #used to find path information for input/output
 from datetime import datetime #used for calculating session duration
+import time
 
 """ ======================================================================================================== """
 
 #a session class that defines all relevant variables and functions needed 
 #to initialize and maintain a session
 class Session:
+    
+    __slots__ = "ip", "firstDate", "firstTime", "lastDate", "lastTime", "documentCount"
     
     def __init__(self, ip, firstDate, firstTime, lastDate, lastTime):
         self.ip = ip
@@ -28,22 +31,21 @@ class Session:
     #calculates the elapsed time between a start date/time and end date/time
     #used to check if a session has expired and to report the total session time
     def calculateElapsedTime(self, startDate, startTime, endDate, endTime):
-        beginning = datetime.strptime(startDate + startTime, "%Y-%m-%d%H:%M:%S")
-        end = datetime.strptime(endDate + endTime, "%Y-%m-%d%H:%M:%S")
-        elapsedTime = end - beginning
-        elapsedTime = elapsedTime.total_seconds() #if the inactivity period is longer than 59 seconds
-        return int(elapsedTime)
+        try:
+            beginning = datetime.strptime(startDate + startTime, "%Y-%m-%d%H:%M:%S") #converts string to datetime object
+            end = datetime.strptime(endDate + endTime, "%Y-%m-%d%H:%M:%S")
+            elapsedTime = end - beginning
+            elapsedTime = elapsedTime.total_seconds() + 1 #calculates the total seconds that have elapsed
+            return int(elapsedTime)
+        except ValueError:
+            print("The argument for calculateElapsedTime is not a valid date\n")
 
     #end the session by calculating the elapsed time of the session and 
     #writing the session information to the output
     def endSession(self, path, startDate, startTime, endDate, endTime):
-        elapsedTime = self.calculateElapsedTime(startDate, startTime, endDate, endTime)
-        with open(path + "/output/sessionization.txt", "a") as output:
-            output.write("{0},{1} {2},{3} {4},{5},{6}\n".format(self.ip, self.firstDate, self.firstTime, self.lastDate, self.lastTime, elapsedTime + 1, self.documentCount))
-
-    #call this function to end all sesssions once the end of the input has been reached
-    def endAllSessions(self):
-        print("end all sessions")
+        elapsedTime = self.calculateElapsedTime(startDate, startTime, endDate, endTime) 
+        with open(path + "/output/sessionization.txt", "a") as output: #add 1 to elapsedTime because inclusive (i.e. 0->1 is 2 seconds)
+            output.write("{0},{1} {2},{3} {4},{5},{6}\n".format(self.ip, self.firstDate, self.firstTime, self.lastDate, self.lastTime, elapsedTime, self.documentCount))
         
 """ ======================================================================================================== """
 
@@ -70,7 +72,7 @@ def main():
             output.write("")
         
     #navigates to the log.csv file in the input directory
-    with open(path + "/input/test.csv", "r") as edgarData, open(path + "/input/inactivity_period.txt", "r") as inactivityPeriod:
+    with open(path + "/input/log20170630.csv", "r") as edgarData, open(path + "/input/inactivity_period.txt", "r") as inactivityPeriod:
         #obtains the inactivity period from the inactivity_period.txt file 
         #located in the input directory
         INACTIVITY_PERIOD = int(inactivityPeriod.readline())
@@ -87,6 +89,7 @@ def main():
               
         activeSessions = list() #a list is used to store all of the active sessions 
         previousTime = 0 #used to determine if the time has incremented and if we need to check if sessions have expired 
+        expiredSessions = list() #a list is used to keep track of expired sessions after each time increment
         
         #iterate through the input one line at a time, creating session objects,
         #updating document counts, and ending sessions as appropriate
@@ -101,10 +104,13 @@ def main():
                     #calculate the elapsed time. if the user has been inactive
                     #longer than the specified inactivity period, end the session
                     elapsedTime = session.calculateElapsedTime(session.lastDate, session.lastTime, accessInformation[DATE_INDEX], accessInformation[TIME_INDEX])
-                    if elapsedTime > INACTIVITY_PERIOD:
+                    if elapsedTime > INACTIVITY_PERIOD + 1:
                         session.endSession(path, session.firstDate, session.firstTime, session.lastDate, session.lastTime)
-                        activeSessions.remove(session)
-                        
+                        expiredSessions.append(session)                 
+            
+            #update the activeSessions list to reflect expired sessions
+            activeSessions[:] = [element for element in activeSessions if element not in expiredSessions]
+            
             ipExists = 0 #used as a flag to see if a user already has an active session
             #search the list of active sessions to see if the ip has an active session
             for session in activeSessions:
@@ -115,7 +121,8 @@ def main():
                     
             #if there is an active session with the same ip address, increment the document
             #count for that session and update the time of the last access
-            if ipExists and currentSession != None:
+            #test: assert(currentSession)
+            if ipExists:
                 currentSession.addDocument()
                 currentSession.lastTime = accessInformation[TIME_INDEX]
                 currentSession.lastDate = accessInformation[DATE_INDEX]
@@ -127,6 +134,9 @@ def main():
                 activeSessions.append(newSession)
                 
             
+        with open(path + "/output/sessionization.txt", "a") as output: 
+            output.write("------------------------------------------------------------\n")
+            
         #once the end of the file has been reached, end all active sessions
         #in the correct order
         for session in activeSessions:
@@ -136,4 +146,6 @@ def main():
     
 #run the main script 
 if __name__ == "__main__":
+    startTime = time.time()
     main()
+    print(" --- {0} seconds ---".format(time.time() - startTime))
