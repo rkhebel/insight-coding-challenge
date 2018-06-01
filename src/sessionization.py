@@ -14,6 +14,7 @@ import time
 #to initialize and maintain a session
 class Session:
     
+    #reduce the time to create and access data associated with session objects
     __slots__ = "ip", "firstDate", "firstTime", "lastDate", "lastTime", "documentCount"
     
     def __init__(self, ip, firstDate, firstTime, lastDate, lastTime):
@@ -132,10 +133,6 @@ def main():
             if not ipExists:
                 newSession = Session(accessInformation[IP_INDEX],accessInformation[DATE_INDEX],accessInformation[TIME_INDEX],accessInformation[DATE_INDEX],accessInformation[TIME_INDEX])
                 activeSessions.append(newSession)
-                
-            
-        with open(path + "/output/sessionization.txt", "a") as output: 
-            output.write("------------------------------------------------------------\n")
             
         #once the end of the file has been reached, end all active sessions
         #in the correct order
