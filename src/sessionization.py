@@ -36,7 +36,7 @@ class Session:
             beginning = datetime.strptime(startDate + startTime, "%Y-%m-%d%H:%M:%S") #converts string to datetime object
             end = datetime.strptime(endDate + endTime, "%Y-%m-%d%H:%M:%S")
             elapsedTime = end - beginning
-            elapsedTime = elapsedTime.total_seconds() + 1 #calculates the total seconds that have elapsed
+            elapsedTime = elapsedTime.total_seconds() + 1 #calculates the total seconds that have elapsed, add 1 to elapsedTime because inclusive (i.e. 0->1 is 2 seconds)
             return int(elapsedTime)
         except ValueError:
             print("The argument for calculateElapsedTime is not a valid date\n")
@@ -45,7 +45,7 @@ class Session:
     #writing the session information to the output
     def endSession(self, path, startDate, startTime, endDate, endTime):
         elapsedTime = self.calculateElapsedTime(startDate, startTime, endDate, endTime) 
-        with open(path + "/output/sessionization.txt", "a") as output: #add 1 to elapsedTime because inclusive (i.e. 0->1 is 2 seconds)
+        with open(path + "/output/sessionization.txt", "a") as output: 
             output.write("{0},{1} {2},{3} {4},{5},{6}\n".format(self.ip, self.firstDate, self.firstTime, self.lastDate, self.lastTime, elapsedTime, self.documentCount))
         
 """ ======================================================================================================== """
@@ -53,17 +53,6 @@ class Session:
 #main file for reading inputs, interating through the EDGAR logs, and outputting
 #information to a text file
 def main():
-    
-    #use this code to copy data from very large csv files for testing purposes
-    """ ----------------------------------------------------------------------
-    outPath = os.path.split(os.getcwd())[0] + "/input/log.csv"
-    outputData = open(outPath, "w")
-    for i in range(0, 100):
-        outputData.write(edgarData.readline())
-        
-    for session in activeSessions:
-        print("ip:",session.ip,"first:",session.firstDate,session.firstTime,"last:",session.lastDate,session.lastTime,"docs:", session.documentCount)
-    ---------------------------------------------------------------------- """
     
     #returns the path to the parent directory 
     path = os.path.split(os.getcwd())[0]
