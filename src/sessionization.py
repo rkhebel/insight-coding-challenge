@@ -73,7 +73,7 @@ def main():
             output.write("")
         
     #navigates to the log.csv file in the input directory
-    with open(path + "/input/log20170630.csv", "r") as edgarData, open(path + "/input/inactivity_period.txt", "r") as inactivityPeriod:
+    with open(path + "/input/log.csv", "r") as edgarData, open(path + "/input/inactivity_period.txt", "r") as inactivityPeriod:
         #obtains the inactivity period from the inactivity_period.txt file 
         #located in the input directory
         INACTIVITY_PERIOD = int(inactivityPeriod.readline())
